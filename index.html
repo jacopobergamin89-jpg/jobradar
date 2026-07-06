@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>JobRadar — cerca offerte di lavoro</title>
+<meta name="description" content="Trasforma i tuoi criteri o il tuo CV in ricerche mirate su decine di portali di lavoro, social e agenzie." />
+<meta name="theme-color" content="#0E2E33" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --petrol:#0E2E33;--petrol-2:#123A41;--petrol-3:#0A2429;
+  --mint:#17C3A2;--mint-soft:rgba(23,195,162,.14);--mint-line:rgba(23,195,162,.36);
+  --amber:#F5A524;--amber-2:#E0951C;
+  --paper:#E8EFEF;--surface:#FFFFFF;--surface-2:#F2F7F7;
+  --ink:#0E2E33;--muted:#4E6164;--muted-2:#6E8386;--line:#D6E2E1;--line-2:#C2D4D2;
+  --danger:#C6453F;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:6px}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+.disp{font-family:'Space Grotesk',system-ui,sans-serif}
+a{color:inherit}
+
+/* loader iniziale */
+#boot{min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);gap:10px;font-size:15px}
+#boot svg{width:20px;height:20px;color:var(--mint);animation:spin 1s linear infinite}
+
+.app{display:flex;min-height:100vh}
+
+/* Sidebar desktop */
+.side{width:256px;flex:0 0 256px;background:var(--petrol);color:#DDECEA;display:flex;flex-direction:column;
+  padding:24px 18px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:12px;padding:2px 6px 24px}
+.mark{width:36px;height:36px;flex:0 0 36px}
+.brand h1{font-size:20px;letter-spacing:-.02em;margin:0;color:#fff;font-weight:600}
+.brand .tag{display:block;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--mint);margin-top:3px}
+.nav{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.navbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;
+  color:#B0C7C5;padding:12px 13px;border-radius:11px;font-size:15px;cursor:pointer;transition:.15s;font-family:inherit}
+.navbtn:hover{background:var(--petrol-2);color:#EAF6F4}
+.navbtn.on{background:var(--mint-soft);color:#fff}
+.navbtn.on .ic{color:var(--mint)}
+.navbtn .ic{width:19px;height:19px;flex:0 0 19px;color:#7FA3A0}
+.navbtn .ct{margin-left:auto;font-size:11.5px;background:rgba(255,255,255,.1);padding:1px 8px;border-radius:20px;color:#CFE3E1}
+.sidefoot{margin-top:auto;font-size:12px;line-height:1.55;color:#728F8C;padding:16px 6px 2px}
+
+/* Main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.mobtop{display:none}
+.wrap{padding:36px 44px 80px;max-width:1080px;width:100%;margin:0 auto}
+.h2{font-size:29px;letter-spacing:-.025em;margin:0 0 6px;font-weight:600;line-height:1.15}
+.sub{color:var(--muted);font-size:15.5px;margin:0 0 26px;max-width:64ch;line-height:1.55}
+.eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#0FA588;font-weight:700;margin-bottom:10px}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+.card + .card{margin-top:20px}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:246px 1fr;gap:0;overflow:hidden;padding:0}
+.hero-radar{background:var(--petrol);padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#CFE3E1}
+.hero-form{padding:26px 28px}
+
+/* Radar */
+.radar{position:relative;width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle,rgba(23,195,162,.10),transparent 72%);display:flex;align-items:center;justify-content:center}
+.rr{position:absolute;border:1px solid rgba(23,195,162,.22);border-radius:50%}
+.rr.a{inset:0}.rr.b{inset:31px}.rr.c{inset:62px}
+.rx{position:absolute;inset:0}
+.rx::before,.rx::after{content:'';position:absolute;background:rgba(23,195,162,.16)}
+.rx::before{left:50%;top:0;bottom:0;width:1px;transform:translateX(-.5px)}
+.rx::after{top:50%;left:0;right:0;height:1px;transform:translateY(-.5px)}
+.sweep{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(23,195,162,.42),rgba(23,195,162,0) 42%);animation:sweep 4.2s linear infinite}
+.blip{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--mint);
+  box-shadow:0 0 9px 1px rgba(23,195,162,.8);animation:blip 4.2s ease-in-out infinite}
+.rc{position:relative;z-index:2}
+.rc b{font-size:32px;color:#fff;letter-spacing:-.03em;line-height:1;font-family:'Space Grotesk',sans-serif}
+.rc small{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);margin-top:6px}
+.hero-radar p{font-size:12.5px;line-height:1.55;color:#8FB0AD;margin:20px 4px 0}
+@keyframes sweep{to{transform:rotate(360deg)}}
+@keyframes blip{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Fields */
+.field{margin-bottom:17px}
+.field:last-child{margin-bottom:0}
+.field > label{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin-bottom:8px;font-family:'Space Mono',monospace}
+.input{width:100%;border:1px solid var(--line-2);background:var(--surface-2);border-radius:11px;
+  padding:12px 14px;font-size:16px;color:var(--ink);font-family:inherit;transition:.15s}
+.input:focus{background:#fff;border-color:var(--mint);outline:none;box-shadow:0 0 0 3px var(--mint-soft)}
+.input::placeholder{color:var(--muted-2)}
+textarea.input{resize:vertical;min-height:150px;line-height:1.55}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line-2);background:var(--surface-2);color:var(--muted);padding:9px 14px;border-radius:22px;
+  font-size:14px;cursor:pointer;transition:.13s;font-family:inherit;min-height:40px;line-height:1.2}
+.chip:hover{border-color:var(--mint);color:var(--ink)}
+.chip.on{background:var(--petrol);border-color:var(--petrol);color:#fff}
+.chip.long{font-size:13px;padding:8px 13px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:12px;
+  padding:13px 22px;font-size:15.5px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;min-height:46px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-amber{background:var(--amber);color:#3A2600}
+.btn-amber:hover:not(:disabled){background:var(--amber-2)}
+.btn-dark{background:var(--petrol);color:#fff}
+.btn-dark:hover:not(:disabled){background:var(--petrol-2)}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line-2)}
+.btn-ghost:hover{border-color:var(--mint);color:var(--petrol)}
+.btn .ic{width:18px;height:18px}
+.btn-full{width:100%;margin-top:8px}
+
+/* Banner */
+.banner{display:flex;gap:12px;align-items:flex-start;background:var(--mint-soft);border:1px solid var(--mint-line);
+  border-radius:14px;padding:14px 16px;margin-bottom:24px}
+.banner .ic{width:19px;height:19px;color:#0FA588;flex:0 0 19px;margin-top:1px}
+.banner p{margin:0;font-size:13.5px;line-height:1.55;color:#1F5A52}
+.banner b{color:#153f39}
+
+/* Results */
+.rhead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:30px 0 18px}
+.rhead .l b{font-size:23px;letter-spacing:-.02em;font-family:'Space Grotesk',sans-serif}
+.rhead .l small{display:block;color:var(--muted);font-size:13.5px;margin-top:3px}
+.ractions{display:flex;gap:10px;flex-wrap:wrap}
+.ractions .btn{padding:10px 16px;font-size:14px;min-height:42px}
+
+.cgroup{margin-top:24px}
+.chead{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.chead .ci{width:32px;height:32px;border-radius:10px;background:var(--petrol);color:var(--mint);
+  display:flex;align-items:center;justify-content:center;flex:0 0 32px}
+.chead .ci .ic{width:17px;height:17px}
+.chead h4{margin:0;font-size:16px;letter-spacing:-.01em}
+.chead .cb{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:#12554D;
+  background:var(--mint-soft);border:1px solid var(--mint-line);padding:3px 10px;border-radius:20px;white-space:nowrap}
+.chead .cl{flex:1;height:1px;background:var(--line)}
+
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:12px}
+.portal{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:15px 16px;transition:.15s;text-decoration:none;color:inherit}
+.portal:hover{border-color:var(--mint);box-shadow:0 8px 20px -12px rgba(14,46,51,.42);transform:translateY(-1px)}
+.portal .pt{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.portal .pt b{font-size:15px;letter-spacing:-.01em}
+.portal .pt .ic{width:15px;height:15px;color:var(--muted-2);flex:0 0 15px}
+.portal:hover .pt .ic{color:var(--mint)}
+.portal p{margin:6px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.ptag{margin-top:11px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;align-self:flex-start;padding:3px 9px;border-radius:7px}
+.ptag.deep{background:var(--mint-soft);color:#12554D}
+.ptag.site{background:#EDF2F2;color:var(--muted)}
+
+/* Annunci in tempo reale */
+.spin{animation:spin 1s linear infinite}
+.live{margin-top:4px}
+.jloading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14.5px;padding:12px 2px}
+.jloading .ic{width:18px;height:18px;color:var(--mint)}
+.jempty{background:var(--surface-2);border:1px dashed var(--line-2);border-radius:13px;padding:16px 18px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.jempty b{color:var(--ink)}
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:12px}
+.jobcard{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:15px 16px;text-decoration:none;color:inherit;transition:.15s}
+.jobcard:hover{border-color:var(--mint);box-shadow:0 8px 20px -12px rgba(14,46,51,.42);transform:translateY(-1px)}
+.jobcard .jr{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.jobcard .jt{font-size:15px;font-weight:600;letter-spacing:-.01em;line-height:1.3;color:var(--petrol)}
+.jobcard .jr .ic{width:15px;height:15px;color:var(--muted-2);flex:0 0 15px;margin-top:2px}
+.jobcard:hover .jr .ic{color:var(--mint)}
+.jobcard .jm{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+.jfoot{display:flex;align-items:center;gap:8px;margin-top:11px;flex-wrap:wrap}
+.jsrc{font-size:10px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:#12554D;background:var(--mint-soft);border:1px solid var(--mint-line);padding:3px 8px;border-radius:7px}
+.jtype{font-size:10.5px;color:var(--muted);background:#EDF2F2;padding:3px 8px;border-radius:7px;text-transform:capitalize}
+.jdate{font-size:11px;color:var(--muted-2);margin-left:auto}
+
+/* Profile / analysis */
+.profile{border:1px solid var(--line);border-radius:18px;padding:22px 24px;background:var(--surface);margin-top:20px}
+.pfg{display:grid;grid-template-columns:1fr 1fr;gap:15px 28px;margin:6px 0 18px}
+.pfi .k{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace}
+.pfi .v{font-size:16.5px;margin-top:4px;letter-spacing:-.01em}
+.skills{display:flex;flex-wrap:wrap;gap:8px}
+.skill{background:var(--surface-2);border:1px solid var(--line-2);color:var(--petrol);padding:6px 12px;border-radius:22px;font-size:13px}
+.qchip{background:var(--petrol);color:#fff;border:0;padding:9px 14px;border-radius:22px;font-size:13.5px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;font-family:inherit;transition:.13s;min-height:40px}
+.qchip:hover{background:var(--petrol-2)}
+.qchip .ic{width:14px;height:14px;color:var(--mint)}
+
+.err{display:flex;gap:11px;align-items:flex-start;background:#FBEEED;border:1px solid #F0CBC8;border-radius:12px;
+  padding:13px 15px;margin-top:15px;color:#8B342F;font-size:14px}
+.err .ic{width:18px;height:18px;flex:0 0 18px;margin-top:1px}
+
+/* Saved */
+.sitem{display:flex;align-items:center;gap:15px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 17px}
+.sitem + .sitem{margin-top:11px}
+.sitem .sb{flex:1;min-width:0}
+.sitem .sb b{font-size:15.5px;letter-spacing:-.01em}
+.sitem .sb small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.ib{border:1px solid var(--line-2);background:#fff;border-radius:10px;width:40px;height:40px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;color:var(--muted);transition:.13s;flex:0 0 40px}
+.ib:hover{border-color:var(--mint);color:var(--petrol)}
+.ib.danger:hover{border-color:var(--danger);color:var(--danger)}
+.ib .ic{width:17px;height:17px}
+
+/* Empty */
+.empty{text-align:center;padding:56px 20px;color:var(--muted)}
+.empty .ei{width:56px;height:56px;border-radius:15px;background:var(--surface);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 15px}
+.empty .ei .ic{width:26px;height:26px;color:var(--muted-2)}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px;letter-spacing:-.01em}
+.empty p{margin:0;font-size:14px;max-width:40ch;margin-inline:auto;line-height:1.55}
+
+/* Toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);background:var(--petrol);color:#fff;padding:13px 22px;
+  border-radius:13px;font-size:14.5px;display:flex;align-items:center;gap:10px;z-index:60;
+  box-shadow:0 14px 34px -10px rgba(14,46,51,.6);animation:tin .2s ease;bottom:calc(22px + env(safe-area-inset-bottom))}
+.toast .ic{width:16px;height:16px;color:var(--mint)}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
+
+/* Mobile bottom nav */
+.botnav{display:none}
+
+@media (max-width:900px){
+  .side{display:none}
+  .mobtop{display:block;position:sticky;top:0;z-index:20;background:var(--petrol);color:#fff}
+  .mobbrand{display:flex;align-items:center;gap:11px;padding:14px 18px}
+  .mobbrand h1{font-size:18px;margin:0;font-weight:600}
+  .mobbrand .mark{width:29px;height:29px;flex:0 0 29px}
+  .mobbrand .tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint)}
+  .wrap{padding:22px 18px calc(96px + env(safe-area-inset-bottom))}
+  .h2{font-size:24px}
+  .sub{font-size:15px;margin-bottom:22px}
+  .hero{grid-template-columns:1fr}
+  .hero-radar{padding:24px}
+  .row2{grid-template-columns:1fr}
+  .pfg{grid-template-columns:1fr}
+  .rhead .ractions{width:100%}
+  .rhead .ractions .btn{flex:1}
+
+  .botnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;box-shadow:0 -6px 20px -14px rgba(14,46,51,.4)}
+  .bn{flex:1;background:transparent;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted-2);
+    font-size:10.5px;font-family:inherit;cursor:pointer;padding:4px 2px;border-radius:10px;position:relative}
+  .bn .ic{width:22px;height:22px}
+  .bn.on{color:var(--petrol)}
+  .bn.on .ic{color:var(--mint)}
+  .bn .dot{position:absolute;top:2px;right:calc(50% - 16px);width:7px;height:7px;background:var(--amber);border-radius:50%}
+}
+@media (prefers-reduced-motion:reduce){
+  .sweep{animation:none;opacity:.28}.blip{animation:none;opacity:.9}.portal:hover{transform:none}
+}
+</style>
+</head>
+<body>
+<div id="root"><div id="boot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Caricamento di JobRadar…</div></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useCallback } = React;
+
+/* ---------------- Icone (SVG inline) ---------------- */
+const ICONS = {
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  lightbulb:'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  bookmark:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  building:'<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+  code:'<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+  briefcase:'<rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  landmark:'<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+  ext:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  chevron:'<path d="m9 18 6-6-6-6"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  sparkles:'<path d="M9.9 15.5A2 2 0 0 0 8.5 14.1l-6.1-1.6a.5.5 0 0 1 0-1L8.5 9.9A2 2 0 0 0 9.9 8.5l1.6-6.1a.5.5 0 0 1 1 0l1.5 6.1A2 2 0 0 0 15.5 9.9l6.1 1.6a.5.5 0 0 1 0 1L15.5 14.1a2 2 0 0 0-1.4 1.4l-1.6 6.1a.5.5 0 0 1-1 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+  wand:'<path d="m21.6 3.6-1.3-1.3a1.2 1.2 0 0 0-1.7 0L2.4 18.6a1.2 1.2 0 0 0 0 1.7l1.3 1.3a1.2 1.2 0 0 0 1.7 0L21.6 5.4a1.2 1.2 0 0 0 0-1.8Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  loader:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'
+};
+function Ic({ name, size = 18, className, style }) {
+  return <svg className={"ic " + (className || "")} style={style} width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    dangerouslySetInnerHTML={{ __html: ICONS[name] || "" }} />;
+}
+
+/* ---------------- Storage (localStorage con fallback) ---------------- */
+const _mem = {};
+const store = {
+  get(k){ try{ const v = localStorage.getItem(k); return v != null ? v : (k in _mem ? _mem[k] : null); } catch(_){ return k in _mem ? _mem[k] : null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); } catch(_){ _mem[k] = v; } }
+};
+
+/* ---------------- Helper ---------------- */
+function stripAccents(s){ return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+function slugify(s){ return stripAccents((s||"").toLowerCase()).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+const e = encodeURIComponent;
+const SEN_WORD = { junior:"junior", senior:"senior", lead:"lead" };
+
+function buildQuery(c){
+  const senWord = SEN_WORD[c.seniority] || "";
+  const core = [c.role, senWord, c.keywords].filter(Boolean).join(" ").trim();
+  const it = [core, c.remote === "remoto" ? "remoto" : ""].filter(Boolean).join(" ").trim();
+  const slugSrc = [c.role, c.keywords].filter(Boolean).join(" ").split(/\s+/).slice(0,3).join(" ");
+  return { kw: it || core, kwCore: core, roleSlug: slugify(slugSrc), loc: (c.location || "").trim(), raw: c };
+}
+
+/* ---------------- Analisi locale del testo ---------------- */
+const CITIES = ["milano","roma","torino","napoli","bologna","firenze","venezia","genova","palermo","bari","catania","verona","padova","trieste","brescia","parma","modena","reggio emilia","reggio calabria","perugia","cagliari","pescara","livorno","ravenna","rimini","salerno","ferrara","monza","bergamo","vicenza","bolzano","trento","ancona","udine","lecce","como","varese","novara","piacenza","cremona","pisa","lucca","arezzo","siena","latina","taranto","foggia","cosenza","catanzaro","messina","sassari","treviso","pordenone","mantova","pavia","lodi","asti","cuneo","alessandria","aosta","potenza","matera","campobasso","caserta","avellino","benevento","frosinone","viterbo","rieti","terni","grosseto","massa","carrara","la spezia","savona","imperia","biella","vercelli","belluno","rovigo","gorizia","teramo","chieti","brindisi","crotone","enna","caltanissetta","agrigento","trapani","ragusa","siracusa","nuoro","oristano","olbia"];
+const STOP = new Set(["cerco","cercando","cerca","lavoro","lavori","offerta","offerte","posizione","posizioni","come","per","con","che","del","della","delle","dei","degli","uno","una","un","il","lo","la","le","gli","di","da","in","su","tra","fra","ambito","settore","preferibilmente","preferisco","vicino","zona","presso","area","mi","interessa","interessano","interessato","interessata","so","saper","usare","uso","conosco","anche","oppure","tipo","ruolo","cercasi","trovare","nuovo","nuova","qualcosa","campo","ecc","disponibile","disponibilita","ricerca","voglio","vorrei","piace","piacerebbe","essere","fare","ad","al","alla","allo","agli","alle","dal","dalla","suite","circa","molto","abbastanza","bene","buona","ottima","possibilmente","preferenza"]);
+
+function analyzeText(text){
+  const raw = text || "";
+  const flat = " " + stripAccents(raw.toLowerCase()) + " ";
+
+  let remote = "qualsiasi";
+  if (/\b(da )?remoto\b|smart[\s-]?working|full[\s-]?remote|telelavoro/.test(flat)) remote = "remoto";
+  else if (/\bibrido\b|hybrid/.test(flat)) remote = "ibrido";
+  else if (/\bin sede\b|in presenza|on[\s-]?site|presso la sede/.test(flat)) remote = "onsite";
+
+  let contract = "qualsiasi";
+  if (/indetermin|posto fisso|assunzione stabile|contratto stabile|tempo indeterminato|a tempo indet/.test(flat)) contract = "indeterminato";
+  else if (/tempo determinato|a termine|determinato/.test(flat)) contract = "determinato";
+  else if (/\bstage\b|tirocin/.test(flat)) contract = "stage";
+  else if (/apprendist/.test(flat)) contract = "apprendistato";
+  else if (/partita iva|\bp\.? ?iva\b|freelance|libero profession/.test(flat)) contract = "piva";
+
+  let seniority = "qualsiasi";
+  if (/\blead\b|responsabile|coordinat|dirigent|\bcapo\b|team lead|manager/.test(flat)) seniority = "lead";
+  else if (/\bsenior\b|esperto|pluriennale|molta esperienza|molti anni/.test(flat)) seniority = "senior";
+  else if (/\bjunior\b|neolaureat|prima esperienza|entry[\s-]?level|principiante|senza esperienza|apprendist/.test(flat)) seniority = "junior";
+  const ym = flat.match(/(\d+)\s*ann/);
+  if (ym && seniority === "qualsiasi"){ const n = parseInt(ym[1],10); seniority = n >= 5 ? "senior" : (n >= 2 ? "mid" : "junior"); }
+
+  let location = "";
+  for (const city of CITIES){
+    const re = new RegExp("\\b" + city.replace(/ /g,"\\s") + "\\b");
+    if (re.test(flat)){ location = city.replace(/\b\w/g, m => m.toUpperCase()); break; }
+  }
+  if (!location && /\bitalia\b/.test(flat)) location = "Italia";
+  if (!location && /\bester[oa]\b/.test(flat)) location = "";
+
+  const removeRe = /(\bda remoto\b|\bremoto\b|smart[\s-]?working|telelavoro|\bibrido\b|hybrid|in sede|in presenza|on[\s-]?site|a tempo (in)?determinato|tempo (in)?determinato|(in)?determinato|posto fisso|stabile|\bstage\b|tirocinio|apprendistato|apprendista|partita iva|p\.? ?iva|freelance|libero profession|\bjunior\b|\bsenior\b|\blead\b|responsabile|manager|neolaureato|neolaureata|esperto|pluriennale|entry[\s-]?level|\b\d+\s*anni?\b)/gi;
+  let clean = raw.replace(removeRe, " ");
+  if (location && location !== "Italia") clean = clean.replace(new RegExp(location, "gi"), " ");
+  clean = clean.replace(/\bitalia\b/gi, " ");
+
+  const words = stripAccents(clean.toLowerCase()).replace(/[^a-z0-9\s+.#]/g," ").split(/\s+/)
+    .filter(w => w.length > 1 && !STOP.has(w));
+  const seen = new Set(); const kw = [];
+  for (const w of words){ if (!seen.has(w)){ seen.add(w); kw.push(w); } }
+  const keywords = kw.slice(0, 8);
+  const role = keywords.slice(0, 6).join(" ");
+
+  const qs = [];
+  if (role) qs.push(location ? (role + " " + location) : role);
+  if (role) qs.push(role);
+  if (keywords.length > 2) qs.push(keywords.slice(0,3).join(" "));
+  const queries = [...new Set(qs.map(s => s.trim()).filter(Boolean))].slice(0,3);
+
+  return { role, location, seniority, contract, remote, keywords, queries };
+}
+function analysisToCriteria(a){
+  return { role: a.role, location: a.location, seniority: a.seniority, contract: a.contract, remote: a.remote, keywords: "" };
+}
+
+/* ---------------- Annunci reali da fonti aperte (keyless, CORS) ---------------- */
+function fmtDate(s){ const t = Date.parse(s); if (isNaN(t)) return ""; try { return new Date(t).toLocaleDateString("it-IT",{ day:"2-digit", month:"short" }); } catch(_){ return ""; } }
+const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r([]), ms))]);
+async function fetchLiveJobs(q, signal){
+  const term = (q.kwCore || "").trim();
+  const tokens = stripAccents(term.toLowerCase()).split(/\s+/).filter(w => w.length > 1);
+  const getJSON = async (url) => { const r = await fetch(url, { signal }); if (!r.ok) throw new Error("http"); return r.json(); };
+  const remotive = (async () => { try {
+    const d = await getJSON("https://remotive.com/api/remote-jobs?limit=60" + (term ? ("&search=" + e(term)) : ""));
+    return (d.jobs || []).map(j => ({ title:j.title, company:j.company_name, location:j.candidate_required_location || "Remoto", url:j.url, source:"Remotive", date:j.publication_date, type:j.job_type, tags:(j.tags||[]).join(" ") }));
+  } catch(_){ return []; } })();
+  const arbeitnow = (async () => { try {
+    const d = await getJSON("https://www.arbeitnow.com/api/job-board-api");
+    return (d.data || []).map(j => ({ title:j.title, company:j.company_name, location:j.location || (j.remote ? "Remoto" : ""), url:j.url, source:"Arbeitnow", date:(j.created_at ? new Date(j.created_at * 1000).toISOString() : ""), type:(j.job_types && j.job_types[0]) || "", tags:(j.tags||[]).join(" ") }));
+  } catch(_){ return []; } })();
+  const jobicy = (async () => { try {
+    const d = await getJSON("https://jobicy.com/api/v2/remote-jobs?count=50" + (tokens[0] ? ("&tag=" + e(tokens[0])) : ""));
+    return (d.jobs || []).map(j => ({ title:j.jobTitle, company:j.companyName, location:j.jobGeo || "Remoto", url:j.url, source:"Jobicy", date:j.pubDate, type:Array.isArray(j.jobType)?j.jobType[0]:j.jobType, tags:(Array.isArray(j.jobIndustry)?j.jobIndustry.join(" "):"") }));
+  } catch(_){ return []; } })();
+  const results = await Promise.all([withTimeout(remotive, 9000), withTimeout(arbeitnow, 9000), withTimeout(jobicy, 9000)]);
+  let all = results.flat().filter(j => j && j.url && j.title);
+  if (tokens.length){
+    all = all.filter(j => { const hay = stripAccents(((j.title||"") + " " + (j.company||"") + " " + (j.tags||"") + " " + (j.location||"")).toLowerCase()); return tokens.some(t => hay.includes(t)); });
+  }
+  const seen = new Set(); const out = [];
+  for (const j of all){ if (!seen.has(j.url)){ seen.add(j.url); out.push(j); } }
+  out.sort((a,b) => { const ta = Date.parse(a.date) || 0, tb = Date.parse(b.date) || 0; return tb - ta; });
+  return out.slice(0, 24);
+}
+
+/* ---------------- Catalogo portali ---------------- */
+const CATS = [
+  { id:"gen", name:"Generalisti & aggregatori", icon:"globe" },
+  { id:"soc", name:"Social & network professionali", icon:"users" },
+  { id:"age", name:"Agenzie per il lavoro", icon:"building" },
+  { id:"tech", name:"Tech, startup & remoto", icon:"code" },
+  { id:"free", name:"Freelance & progetti", icon:"briefcase" },
+  { id:"pub", name:"Settore pubblico & Europa", icon:"landmark" },
+];
+const PORTALS = [
+  { cat:"gen", name:"Indeed Italia", deep:true, desc:"Il più grande aggregatore di annunci in Italia.", build:q=>`https://it.indeed.com/jobs?q=${e(q.kw)}&l=${e(q.loc)}` },
+  { cat:"gen", name:"LinkedIn Jobs", deep:true, desc:"Annunci + rete professionale e referral.", build:q=>`https://www.linkedin.com/jobs/search/?keywords=${e(q.kwCore)}&location=${e(q.loc)}` },
+  { cat:"gen", name:"InfoJobs", deep:true, desc:"Storico portale italiano, molte PMI.", build:q=>`https://www.infojobs.it/offerte-lavoro?keyword=${e(q.kwCore)}` },
+  { cat:"gen", name:"Monster Italia", deep:true, desc:"Annunci nazionali e internazionali.", build:q=>`https://www.monster.it/lavoro/cerca?q=${e(q.kwCore)}&where=${e(q.loc)}` },
+  { cat:"gen", name:"Google for Jobs", deep:true, desc:"Aggrega annunci da tutto il web.", build:q=>`https://www.google.com/search?q=${e((q.kwCore+" lavoro "+q.loc).trim())}&ibp=htl;jobs` },
+  { cat:"gen", name:"Jooble", deep:true, desc:"Meta-motore con migliaia di fonti.", build:q=>`https://it.jooble.org/SearchResult?ukw=${e(q.kwCore)}&rgns=${e(q.loc)}` },
+  { cat:"gen", name:"Careerjet", deep:true, desc:"Aggregatore multi-portale.", build:q=>`https://www.careerjet.it/lavoro?s=${e(q.kwCore)}&l=${e(q.loc)}` },
+  { cat:"gen", name:"Talent.com", deep:true, desc:"Annunci + stime di stipendio.", build:q=>`https://it.talent.com/jobs?k=${e(q.kwCore)}&l=${e(q.loc)}` },
+  { cat:"gen", name:"Jobrapido", deep:true, desc:"Aggregatore italiano storico.", build:q=>`https://it.jobrapido.com/?w=${e(q.kwCore)}&l=${e(q.loc)}` },
+  { cat:"gen", name:"Glassdoor", deep:true, desc:"Annunci + recensioni e stipendi aziendali.", build:q=>`https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${e(q.kwCore)}` },
+  { cat:"gen", name:"Subito Lavoro", deep:true, desc:"Annunci locali e informali.", build:q=>`https://www.subito.it/annunci-italia/vendita/offerte-lavoro/?q=${e(q.kwCore)}` },
+
+  { cat:"soc", name:"Xing", deep:true, desc:"Rete professionale area DACH (DE/AT/CH).", build:q=>`https://www.xing.com/jobs/search?keywords=${e(q.kwCore)}&location=${e(q.loc)}` },
+  { cat:"soc", name:"Facebook — gruppi", deep:true, desc:"Gruppi 'Offerte di lavoro' per città/settore.", build:q=>`https://www.facebook.com/search/groups/?q=${e((q.kwCore+" lavoro "+q.loc).trim())}` },
+  { cat:"soc", name:"X (Twitter)", deep:true, desc:"Post con 'cerchiamo / posizione aperta'.", build:q=>`https://twitter.com/search?q=${e((q.kwCore+' (assunzioni OR cerchiamo OR "posizione aperta") '+q.loc).trim())}&f=live` },
+  { cat:"soc", name:"Telegram — canali", deep:true, desc:"Canali lavoro indicizzati (via ricerca web).", build:q=>`https://www.google.com/search?q=${e(("site:t.me "+q.kwCore+" lavoro "+q.loc).trim())}` },
+  { cat:"soc", name:"Reddit", deep:true, desc:"r/jobs, r/ItaliaCareerAdvice, thread 'hiring'.", build:q=>`https://www.reddit.com/search/?q=${e((q.kwCore+" hiring "+q.loc).trim())}` },
+  { cat:"soc", name:"Instagram", deep:true, desc:"Profili aziendali con 'we're hiring' (via web).", build:q=>`https://www.google.com/search?q=${e(("site:instagram.com "+q.kwCore+" hiring "+q.loc).trim())}` },
+
+  { cat:"age", name:"Randstad", deep:true, desc:"Agenzia per il lavoro, tutti i settori.", build:q=>`https://www.randstad.it/offerte-lavoro/?q=${e(q.kwCore)}` },
+  { cat:"age", name:"Adecco", deep:true, desc:"Agenzia per il lavoro, rete capillare.", build:q=>`https://www.adecco.it/offerte-lavoro?keywords=${e(q.kwCore)}` },
+  { cat:"age", name:"Gi Group", deep:false, desc:"Somministrazione e ricerca & selezione.", build:()=>`https://www.gigroup.it/offerte-di-lavoro/` },
+  { cat:"age", name:"ManpowerGroup", deep:false, desc:"Agenzia internazionale.", build:()=>`https://www.manpower.it/cerco-lavoro` },
+  { cat:"age", name:"Umana", deep:false, desc:"Agenzia italiana, forte nel Nord-Est.", build:()=>`https://www.umana.it/candidati/offerte-di-lavoro` },
+  { cat:"age", name:"Openjobmetis", deep:false, desc:"Agenzia italiana quotata.", build:()=>`https://www.openjobmetis.it/it/lavoro/offerte` },
+  { cat:"age", name:"Synergie", deep:false, desc:"Multinazionale francese, tra le maggiori in Italia.", build:()=>`https://www.synergie-italia.it/offerte-lavoro` },
+  { cat:"age", name:"Etjca", deep:false, desc:"Agenzia italiana, forte nel manifatturiero e servizi.", build:()=>`https://www.etjca.it/offerte-di-lavoro` },
+  { cat:"age", name:"Orienta", deep:false, desc:"Agenzia italiana con ampia rete di filiali.", build:()=>`https://www.orienta.net/offerte-di-lavoro/` },
+  { cat:"age", name:"Lavoropiù", deep:false, desc:"Agenzia italiana storica, sede a Bologna.", build:()=>`https://www.lavoropiu.it/offerte-di-lavoro/` },
+  { cat:"age", name:"Tempor", deep:false, desc:"Agenzia italiana indipendente.", build:()=>`https://www.tempor.it/offerte-di-lavoro` },
+  { cat:"age", name:"Maw", deep:false, desc:"Men At Work, agenzia italiana quotata.", build:()=>`https://www.maw.it/offerte-di-lavoro` },
+  { cat:"age", name:"Hays", deep:false, desc:"Ricerca specializzata per profili qualificati e manager.", build:()=>`https://www.hays.it/offerte-lavoro` },
+  { cat:"age", name:"Kelly Services", deep:false, desc:"Multinazionale, forte su profili office e specializzati.", build:()=>`https://www.kellyservices.it/` },
+
+  { cat:"tech", name:"Wellfound", deep:false, desc:"Ex AngelList: startup e ruoli tech.", build:()=>`https://wellfound.com/jobs` },
+  { cat:"tech", name:"RemoteOK", deep:true, desc:"Lavoro 100% da remoto, tech-oriented.", build:q=>`https://remoteok.com/remote-${q.roleSlug||"dev"}-jobs` },
+  { cat:"tech", name:"We Work Remotely", deep:true, desc:"La bacheca remote più nota.", build:q=>`https://weworkremotely.com/remote-jobs/search?term=${e(q.kwCore)}` },
+  { cat:"tech", name:"Remotive", deep:true, desc:"Community e annunci remote.", build:q=>`https://remotive.com/remote-jobs?search=${e(q.kwCore)}` },
+  { cat:"tech", name:"Welcome to the Jungle", deep:true, desc:"Aziende con cultura + video (ex Otta).", build:q=>`https://www.welcometothejungle.com/it/jobs?query=${e(q.kwCore)}&aroundQuery=${e(q.loc)}` },
+  { cat:"tech", name:"Arc.dev", deep:true, desc:"Sviluppatori remote, anche freelance.", build:q=>`https://arc.dev/remote-jobs?search=${e(q.kwCore)}` },
+  { cat:"tech", name:"ATS aziendali", deep:true, desc:"Cerca sui career board Greenhouse & Lever.", build:q=>`https://www.google.com/search?q=${e(("(site:boards.greenhouse.io OR site:jobs.lever.co) "+q.kwCore+" "+q.loc).trim())}` },
+
+  { cat:"free", name:"Upwork", deep:true, desc:"Progetti freelance internazionali.", build:q=>`https://www.upwork.com/nx/search/jobs/?q=${e(q.kwCore)}` },
+  { cat:"free", name:"Malt", deep:true, desc:"Freelance qualificati, forte in IT/FR.", build:q=>`https://www.malt.it/s?q=${e(q.kwCore)}` },
+  { cat:"free", name:"Freelancer", deep:true, desc:"Marketplace globale di progetti.", build:q=>`https://www.freelancer.com/jobs/${q.roleSlug||"all"}/` },
+  { cat:"free", name:"Fiverr", deep:false, desc:"Vendi servizi a pacchetto (gig).", build:()=>`https://www.fiverr.com/` },
+
+  { cat:"pub", name:"EURES", deep:true, desc:"Portale UE per la mobilità professionale.", build:q=>`https://europa.eu/eures/portal/jv-se/search?lang=it&keywords=${e(q.kwCore)}` },
+  { cat:"pub", name:"InPA", deep:false, desc:"Portale del reclutamento della PA italiana.", build:()=>`https://www.inpa.gov.it/` },
+  { cat:"pub", name:"Gazzetta — concorsi", deep:false, desc:"Concorsi pubblici ufficiali (ultimi 30 giorni).", build:()=>`https://www.gazzettaufficiale.it/30giorni/concorsi` },
+  { cat:"pub", name:"ConcorsiPubblici.com", deep:false, desc:"Aggregatore bandi e concorsi.", build:()=>`https://www.concorsipubblici.com/` },
+];
+
+function textIn(c){ return ((c.role||"")+" "+(c.keywords||"")).toLowerCase(); }
+function techish(c){ return /(dev|svilupp|software|frontend|back-?end|full[- ]?stack|data|cloud|devops|react|angular|vue|java|python|node|php|sistemist|informatic|\bit\b|designer|ux|ui|cyber|machine learning|\bai\b|analyst|analista|qa|tester)/.test(textIn(c)); }
+function publicish(c){ return /(concors|pubblic|statal|comune|region|ministero|asl|sanit|insegn|docent|scuola|inps|forze)/.test(textIn(c)); }
+function freelanceish(c){ return /(freelance|p\.?iva|partita iva|consulen|contratto a progetto)/.test(textIn(c)) || c.contract === "piva"; }
+function catBadge(catId, c){
+  if (catId === "tech" && (techish(c) || c.remote === "remoto")) return "in linea col profilo";
+  if (catId === "pub" && publicish(c)) return "in linea col profilo";
+  if (catId === "free" && freelanceish(c)) return "in linea col profilo";
+  return null;
+}
+
+/* ---------------- Componenti UI ---------------- */
+const BrandMark = () => (
+  <svg className="mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <circle cx="20" cy="20" r="18.5" stroke="#17C3A2" strokeWidth="1.2" opacity=".5" />
+    <circle cx="20" cy="20" r="12" stroke="#17C3A2" strokeWidth="1.2" opacity=".7" />
+    <circle cx="20" cy="20" r="5.5" stroke="#17C3A2" strokeWidth="1.2" />
+    <path d="M20 20 L20 3" stroke="#17C3A2" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M20 20 L33 33" stroke="#F5A524" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="33" cy="33" r="2.4" fill="#F5A524" />
+  </svg>
+);
+const DOTS = [{top:"22%",left:"30%"},{top:"36%",left:"70%"},{top:"64%",left:"26%"},{top:"58%",left:"62%"},{top:"44%",left:"48%"}];
+function Radar({ count }){
+  return (
+    <div className="radar" role="img" aria-label={count + " portali"}>
+      <div className="rr a" /><div className="rr b" /><div className="rr c" />
+      <div className="rx" /><div className="sweep" />
+      {DOTS.map((d,i)=>(<span key={i} className="blip" style={{ top:d.top, left:d.left, animationDelay:(i*0.5)+"s" }} />))}
+      <div className="rc"><b>{count}</b><small>portali</small></div>
+    </div>
+  );
+}
+function Portal({ p, q }){
+  const href = p.build(q);
+  return (
+    <a className="portal" href={href} target="_blank" rel="noopener noreferrer">
+      <div className="pt"><b>{p.name}</b><Ic name="ext" /></div>
+      <p>{p.desc}</p>
+      <span className={"ptag " + (p.deep ? "deep" : "site")}>{p.deep ? "ricerca pre-compilata" : "apre il portale"}</span>
+    </a>
+  );
+}
+function JobCard({ j }){
+  const meta = [j.company, j.location].filter(Boolean).join(" · ");
+  const d = fmtDate(j.date);
+  return (
+    <a className="jobcard" href={j.url} target="_blank" rel="noopener noreferrer">
+      <div className="jr"><b className="jt">{j.title}</b><Ic name="ext" /></div>
+      {meta && <div className="jm">{meta}</div>}
+      <div className="jfoot">
+        <span className="jsrc">{j.source}</span>
+        {j.type && <span className="jtype">{j.type}</span>}
+        {d && <span className="jdate">{d}</span>}
+      </div>
+    </a>
+  );
+}
+function Results({ criteria, onSave, onToast }){
+  const q = useMemo(() => buildQuery(criteria), [criteria]);
+  const groups = useMemo(() => CATS.map(cat => ({ cat, items: PORTALS.filter(p => p.cat === cat.id) })), []);
+  const label = [criteria.role || "Qualsiasi ruolo", criteria.location].filter(Boolean).join(" · ");
+  const [live, setLive] = useState({ loading:true, jobs:[], error:false });
+  useEffect(() => {
+    let alive = true; const ctrl = new AbortController();
+    setLive({ loading:true, jobs:[], error:false });
+    fetchLiveJobs(q, ctrl.signal)
+      .then(jobs => { if (alive) setLive({ loading:false, jobs, error:false }); })
+      .catch(() => { if (alive) setLive({ loading:false, jobs:[], error:true }); });
+    return () => { alive = false; ctrl.abort(); };
+  }, [q.kwCore, q.loc]);
+  const copyAll = useCallback(async () => {
+    const lines = PORTALS.map(p => p.name + ": " + p.build(q)).join("\n");
+    try { await navigator.clipboard.writeText(lines); onToast("Link copiati negli appunti"); }
+    catch(_){ onToast("Copia non riuscita — riprova"); }
+  }, [q, onToast]);
+  return (
+    <div>
+      <div className="rhead">
+        <div className="l"><b>Annunci e ricerche</b><small>{label}</small></div>
+        <div className="ractions">
+          <button className="btn btn-ghost" onClick={copyAll}><Ic name="copy" /> Copia tutti i link</button>
+          {onSave && <button className="btn btn-dark" onClick={() => onSave(criteria)}><Ic name="bookmark" /> Salva ricerca</button>}
+        </div>
+      </div>
+
+      <div className="live">
+        <div className="chead">
+          <span className="ci"><Ic name="sparkles" /></span>
+          <h4>Annunci trovati</h4>
+          {!live.loading && <span className="cb">{live.jobs.length}</span>}
+          <span className="cl" />
+        </div>
+        {live.loading ? (
+          <div className="jloading"><Ic name="loader" className="spin" /> Cerco annunci in tempo reale…</div>
+        ) : live.jobs.length === 0 ? (
+          <div className="jempty">Nessun annuncio diretto per questa ricerca. Le fonti in tempo reale coprono soprattutto ruoli <b>da remoto e internazionali</b>; per i portali italiani usa le ricerche pronte qui sotto.</div>
+        ) : (
+          <div className="jgrid">{live.jobs.map((j, i) => <JobCard key={i} j={j} />)}</div>
+        )}
+      </div>
+
+      {groups.map(({ cat, items }) => {
+        const badge = catBadge(cat.id, criteria);
+        return (
+          <div className="cgroup" key={cat.id}>
+            <div className="chead">
+              <span className="ci"><Ic name={cat.icon} /></span>
+              <h4>{cat.name}</h4>
+              {badge && <span className="cb">{badge}</span>}
+              <span className="cl" />
+            </div>
+            <div className="pgrid">{items.map(p => <Portal key={p.name} p={p} q={q} />)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+        const badge = catBadge(cat.id, criteria);
+        return (
+          <div className="cgroup" key={cat.id}>
+            <div className="chead">
+              <span className="ci"><Ic name={cat.icon} /></span>
+              <h4>{cat.name}</h4>
+              {badge && <span className="cb">{badge}</span>}
+              <span className="cl" />
+            </div>
+            <div className="pgrid">{items.map(p => <Portal key={p.name} p={p} q={q} />)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function ChipRow({ options, value, onChange }){
+  return (
+    <div className="chips">
+      {options.map(o => (
+        <button key={o.v} type="button" className={"chip" + (value === o.v ? " on" : "")} onClick={() => onChange(o.v)}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+function AnalysisCard({ data, criteria, onRunQuery, onLoadSearch, subtitle }){
+  if (!data) return null;
+  const loc = typeof data.location === "string" ? data.location : "";
+  return (
+    <div className="profile">
+      <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <Ic name="sparkles" size={13} style={{ verticalAlign:"-2px", marginRight:6 }} />{subtitle}
+      </div>
+      <div className="pfg">
+        <div className="pfi"><div className="k">Ruolo / parole chiave</div><div className="v">{data.role || "—"}</div></div>
+        <div className="pfi"><div className="k">Località</div><div className="v">{loc || "Qualsiasi"}</div></div>
+        <div className="pfi"><div className="k">Livello</div><div className="v" style={{ textTransform:"capitalize" }}>{data.seniority || "qualsiasi"}</div></div>
+        <div className="pfi"><div className="k">Modalità</div><div className="v" style={{ textTransform:"capitalize" }}>{data.remote === "qualsiasi" ? "indifferente" : data.remote}</div></div>
+      </div>
+      {data.keywords && data.keywords.length > 0 && (
+        <div className="field">
+          <label>Parole chiave rilevate</label>
+          <div className="skills">{data.keywords.map((s,i) => <span className="skill" key={i}>{s}</span>)}</div>
+        </div>
+      )}
+      {data.queries && data.queries.length > 0 && (
+        <div className="field">
+          <label>Ricerche alternative — tocca per usarle</label>
+          <div className="skills">{data.queries.map((qs,i) => (
+            <button className="qchip" key={i} onClick={() => onRunQuery(qs)}><Ic name="search" />{qs}</button>
+          ))}</div>
+        </div>
+      )}
+      {criteria && (
+        <button className="btn btn-ghost btn-full" onClick={() => onLoadSearch(criteria)}>
+          <Ic name="wand" /> Affina questi criteri nella scheda Cerca offerte
+        </button>
+      )}
+    </div>
+  );
+}
+
+const SEN_OPTS = [{v:"qualsiasi",label:"Qualsiasi"},{v:"junior",label:"Junior"},{v:"mid",label:"Mid"},{v:"senior",label:"Senior"},{v:"lead",label:"Lead / Manager"}];
+const CON_OPTS = [{v:"qualsiasi",label:"Qualsiasi"},{v:"indeterminato",label:"Indeterminato"},{v:"determinato",label:"Determinato"},{v:"stage",label:"Stage"},{v:"apprendistato",label:"Apprendistato"},{v:"piva",label:"P. IVA"}];
+const REM_OPTS = [{v:"qualsiasi",label:"Qualsiasi"},{v:"remoto",label:"Remoto"},{v:"ibrido",label:"Ibrido"},{v:"onsite",label:"In sede"}];
+const EMPTY = { role:"", location:"", seniority:"qualsiasi", contract:"qualsiasi", remote:"qualsiasi", keywords:"" };
+const DESC_EX = ["Sviluppatore React da remoto, tempo indeterminato","Marketing digitale junior a Milano, anche stage","Project manager edilizia, zona Roma","Impiegato amministrativo part-time vicino a Torino"];
+
+function loadJSON(key, fallback){ try{ const v = store.get(key); return v ? JSON.parse(v) : fallback; } catch(_){ return fallback; } }
+
+/* ---------------- App ---------------- */
+function App(){
+  const [tab, setTab] = useState("search");
+  const [criteria, setCriteria] = useState(() => ({ ...EMPTY, ...loadJSON("jobradar:criteria", {}) }));
+  const [searchQuery, setSearchQuery] = useState(null);
+
+  const [descText, setDescText] = useState(() => store.get("jobradar:desc") || "");
+  const [descData, setDescData] = useState(null);
+  const [descQuery, setDescQuery] = useState(null);
+  const [descErr, setDescErr] = useState("");
+
+  const [cvText, setCvText] = useState(() => store.get("jobradar:cv") || "");
+  const [cvData, setCvData] = useState(null);
+  const [cvQuery, setCvQuery] = useState(null);
+  const [cvErr, setCvErr] = useState("");
+
+  const [saved, setSaved] = useState(() => loadJSON("jobradar:saved", []));
+  const [toast, setToast] = useState("");
+
+  useEffect(() => { store.set("jobradar:criteria", JSON.stringify(criteria)); }, [criteria]);
+  useEffect(() => { store.set("jobradar:desc", descText); }, [descText]);
+  useEffect(() => { store.set("jobradar:cv", cvText); }, [cvText]);
+  useEffect(() => { store.set("jobradar:saved", JSON.stringify(saved)); }, [saved]);
+
+  const showToast = useCallback((m) => {
+    setToast(m);
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => setToast(""), 2400);
+  }, []);
+  const scrollTo = (id) => setTimeout(() => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior:"smooth", block:"start" }); }, 40);
+  const set = (k, v) => setCriteria(c => ({ ...c, [k]: v }));
+
+  const runSearch = () => { setSearchQuery({ ...criteria }); scrollTo("r-search"); };
+
+  const saveSearch = useCallback((crit) => {
+    const label = [crit.role || "Qualsiasi ruolo", crit.location].filter(Boolean).join(" · ");
+    setSaved(s => [{ id: Date.now().toString(), label, criteria: crit }, ...s].slice(0, 40));
+    showToast("Ricerca salvata");
+  }, [showToast]);
+
+  const openSaved = (item) => { const c = { ...EMPTY, ...item.criteria }; setCriteria(c); setSearchQuery(c); setTab("search"); scrollTo("r-search"); };
+  const loadIntoSearch = (crit) => { const c = { ...EMPTY, ...crit }; setCriteria(c); setSearchQuery(c); setTab("search"); scrollTo("r-search"); };
+
+  const doDesc = () => {
+    if (descText.trim().length < 6){ setDescErr("Scrivi almeno una frase su cosa cerchi."); return; }
+    setDescErr("");
+    const a = analyzeText(descText);
+    setDescData(a);
+    setDescQuery(analysisToCriteria(a));
+    scrollTo("r-desc");
+  };
+  const doCv = () => {
+    if (cvText.trim().length < 40){ setCvErr("Incolla un CV un po' più completo per un'estrazione utile."); return; }
+    setCvErr("");
+    const a = analyzeText(cvText);
+    setCvData(a);
+    setCvQuery(analysisToCriteria(a));
+    scrollTo("r-cv");
+  };
+
+  const NAV = [
+    { id:"search", label:"Cerca offerte", short:"Cerca", icon:"search" },
+    { id:"describe", label:"Descrivi il lavoro", short:"Descrivi", icon:"lightbulb" },
+    { id:"cv", label:"Dal tuo CV", short:"CV", icon:"file" },
+    { id:"portals", label:"Portali censiti", short:"Portali", icon:"globe", count: PORTALS.length },
+    { id:"saved", label:"Ricerche salvate", short:"Salvate", icon:"bookmark", count: saved.length || undefined },
+  ];
+
+  return (
+    <div className="app">
+      <aside className="side">
+        <div className="brand"><BrandMark /><div><h1>JobRadar</h1><span className="tag">copertura offerte</span></div></div>
+        <nav className="nav">
+          {NAV.map(n => (
+            <button key={n.id} className={"navbtn" + (tab === n.id ? " on" : "")} onClick={() => setTab(n.id)}>
+              <Ic name={n.icon} className="ic" /> {n.label}
+              {n.count != null && <span className="ct">{n.count}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="sidefoot">Le tue ricerche e il CV restano salvati solo su questo dispositivo.</div>
+      </aside>
+
+      <div className="mobtop">
+        <div className="mobbrand"><BrandMark /><div><h1>JobRadar</h1><span className="tag">copertura offerte</span></div></div>
+      </div>
+
+      <main className="main">
+        <div className="wrap">
+
+          {tab === "search" && (
+            <>
+              <div className="eyebrow">Ricerca per criteri</div>
+              <h2 className="h2">Descrivi cosa cerchi</h2>
+              <p className="sub">Imposta ruolo, luogo e preferenze: JobRadar mostra annunci reali con link diretto all'offerta dalle fonti aperte, e prepara una ricerca mirata su ogni altro portale, social e agenzia.</p>
+              <div className="card hero">
+                <div className="hero-radar">
+                  <Radar count={PORTALS.length} />
+                  <p>{PORTALS.length} tra portali, social e agenzie pronti a essere interrogati.</p>
+                </div>
+                <div className="hero-form">
+                  <div className="row2">
+                    <div className="field"><label>Ruolo o posizione</label>
+                      <input className="input" placeholder="es. Sviluppatore frontend" value={criteria.role} onChange={ev => set("role", ev.target.value)} /></div>
+                    <div className="field"><label>Località</label>
+                      <input className="input" placeholder="es. Milano, oppure Italia" value={criteria.location} onChange={ev => set("location", ev.target.value)} /></div>
+                  </div>
+                  <div className="field"><label>Parole chiave aggiuntive</label>
+                    <input className="input" placeholder="es. React, TypeScript, e-commerce" value={criteria.keywords} onChange={ev => set("keywords", ev.target.value)} /></div>
+                  <div className="field"><label>Livello</label><ChipRow options={SEN_OPTS} value={criteria.seniority} onChange={v => set("seniority", v)} /></div>
+                  <div className="field"><label>Modalità</label><ChipRow options={REM_OPTS} value={criteria.remote} onChange={v => set("remote", v)} /></div>
+                  <div className="field"><label>Tipo di contratto</label><ChipRow options={CON_OPTS} value={criteria.contract} onChange={v => set("contract", v)} /></div>
+                  <button className="btn btn-amber btn-full" onClick={runSearch}><Ic name="search" /> Genera le ricerche</button>
+                </div>
+              </div>
+              <div id="r-search">{searchQuery && <Results criteria={searchQuery} onSave={saveSearch} onToast={showToast} />}</div>
+            </>
+          )}
+
+          {tab === "describe" && (
+            <>
+              <div className="eyebrow">Ricerca a parole tue</div>
+              <h2 className="h2">Descrivi il lavoro che vuoi</h2>
+              <p className="sub">Scrivi in modo naturale cosa cerchi — ruolo, luogo, orario, settore. La descrizione viene interpretata sul tuo dispositivo e usata per trovare annunci diretti e preparare ricerche mirate su tutti i portali censiti.</p>
+              <div className="card">
+                <div className="field"><label>Cosa stai cercando?</label>
+                  <textarea className="input" value={descText} onChange={ev => setDescText(ev.target.value)}
+                    placeholder={"Es. Cerco un lavoro come grafico, preferibilmente da remoto o ibrido vicino a Bologna. Contratto stabile. Uso Figma e Adobe."} /></div>
+                <div className="field"><label>Oppure parti da un esempio</label>
+                  <div className="chips">{DESC_EX.map((ex,i) => (<button className="chip long" type="button" key={i} onClick={() => setDescText(ex)}>{ex}</button>))}</div></div>
+                <button className="btn btn-amber" onClick={doDesc}><Ic name="sparkles" /> Interpreta e cerca</button>
+                {descErr && <div className="err"><Ic name="x" /><span>{descErr}</span></div>}
+              </div>
+              <AnalysisCard data={descData} criteria={descQuery} subtitle="Come ho interpretato la richiesta"
+                onRunQuery={(qs) => { setDescQuery({ ...EMPTY, role: qs }); scrollTo("r-desc"); }} onLoadSearch={loadIntoSearch} />
+              <div id="r-desc">{descQuery && <div style={{ marginTop:6 }}><Results criteria={descQuery} onSave={saveSearch} onToast={showToast} /></div>}</div>
+            </>
+          )}
+
+          {tab === "cv" && (
+            <>
+              <div className="eyebrow">Ricerca dal curriculum</div>
+              <h2 className="h2">Parti dal tuo CV</h2>
+              <p className="sub">Incolla il testo del curriculum: viene analizzato sul dispositivo per ricavare ruolo, livello e competenze, e da lì JobRadar costruisce ricerche mirate.</p>
+              <div className="banner"><Ic name="info" />
+                <p><b>Privacy:</b> il CV resta nel tuo browser e non viene inviato a nessun server. Le offerte non vengono copiate qui: ogni pulsante apre la ricerca reale sul portale.</p></div>
+              <div className="card">
+                <div className="field"><label>Il tuo curriculum (incolla il testo)</label>
+                  <textarea className="input" value={cvText} onChange={ev => setCvText(ev.target.value)}
+                    placeholder={"Incolla qui esperienze, competenze, formazione…\nEsempio: 5 anni come sviluppatore backend, Java e Spring, ambito fintech, Bologna…"} /></div>
+                <button className="btn btn-amber" onClick={doCv}><Ic name="wand" /> Analizza il CV</button>
+                {cvErr && <div className="err"><Ic name="x" /><span>{cvErr}</span></div>}
+              </div>
+              <AnalysisCard data={cvData} criteria={cvQuery} subtitle="Profilo estratto dal CV"
+                onRunQuery={(qs) => { setCvQuery({ ...EMPTY, role: qs }); scrollTo("r-cv"); }} onLoadSearch={loadIntoSearch} />
+              <div id="r-cv">{cvQuery && <div style={{ marginTop:6 }}><Results criteria={cvQuery} onSave={saveSearch} onToast={showToast} /></div>}</div>
+            </>
+          )}
+
+          {tab === "portals" && (
+            <>
+              <div className="eyebrow">Fonti monitorate</div>
+              <h2 className="h2">Portali censiti</h2>
+              <p className="sub">Le {PORTALS.length} piattaforme che JobRadar interroga, divise per tipo. Le fonti con <b>ricerca pre-compilata</b> ricevono già le tue parole chiave; le altre si aprono sul portale, dove completi tu.</p>
+              {CATS.map(cat => {
+                const items = PORTALS.filter(p => p.cat === cat.id);
+                return (
+                  <div className="cgroup" key={cat.id}>
+                    <div className="chead"><span className="ci"><Ic name={cat.icon} /></span><h4>{cat.name}</h4><span className="cb">{items.length}</span><span className="cl" /></div>
+                    <div className="pgrid">
+                      {items.map(p => (
+                        <a className="portal" key={p.name} href={p.build(buildQuery(EMPTY))} target="_blank" rel="noopener noreferrer">
+                          <div className="pt"><b>{p.name}</b><Ic name="ext" /></div>
+                          <p>{p.desc}</p>
+                          <span className={"ptag " + (p.deep ? "deep" : "site")}>{p.deep ? "ricerca pre-compilata" : "apre il portale"}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {tab === "saved" && (
+            <>
+              <div className="eyebrow">Le tue ricerche</div>
+              <h2 className="h2">Ricerche salvate</h2>
+              <p className="sub">Riapri con un tocco le ricerche che hai messo da parte. Restano su questo dispositivo.</p>
+              {saved.length === 0 ? (
+                <div className="empty"><div className="ei"><Ic name="bookmark" size={26} /></div>
+                  <b>Nessuna ricerca salvata</b><p>Genera una ricerca e usa “Salva ricerca” per ritrovarla qui la prossima volta.</p></div>
+              ) : saved.map(item => (
+                <div className="sitem" key={item.id}>
+                  <div className="sb"><b>{item.label}</b>
+                    <small>{[item.criteria.seniority !== "qualsiasi" && item.criteria.seniority, item.criteria.remote !== "qualsiasi" && item.criteria.remote, item.criteria.keywords].filter(Boolean).join(" · ") || "tutti i criteri"}</small></div>
+                  <button className="ib" title="Riapri" onClick={() => openSaved(item)}><Ic name="chevron" /></button>
+                  <button className="ib danger" title="Elimina" onClick={() => setSaved(s => s.filter(x => x.id !== item.id))}><Ic name="trash" /></button>
+                </div>
+              ))}
+            </>
+          )}
+
+        </div>
+      </main>
+
+      <nav className="botnav">
+        {NAV.map(n => (
+          <button key={n.id} className={"bn" + (tab === n.id ? " on" : "")} onClick={() => setTab(n.id)}>
+            {n.id === "saved" && saved.length > 0 && <span className="dot" />}
+            <Ic name={n.icon} className="ic" />{n.short}
+          </button>
+        ))}
+      </nav>
+
+      {toast && <div className="toast"><Ic name="check" />{toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
