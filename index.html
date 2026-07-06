@@ -686,7 +686,7 @@ function buildQuery(c) {
     kw: it || core,
     kwCore: core,
     roleSlug: slugify(slugSrc),
-    loc: (c.location || "").trim(),
+    loc: (c.location || "").trim() || "Italia",
     raw: c
   };
 }
@@ -896,16 +896,12 @@ const CATS = [{
   name: "Agenzie per il lavoro",
   icon: "building"
 }, {
-  id: "tech",
-  name: "Tech, startup & remoto",
-  icon: "code"
-}, {
   id: "free",
   name: "Freelance & progetti",
   icon: "briefcase"
 }, {
   id: "pub",
-  name: "Settore pubblico & Europa",
+  name: "Settore pubblico & concorsi",
   icon: "landmark"
 }];
 const PORTALS = [{
@@ -1009,19 +1005,13 @@ const PORTALS = [{
   name: "Glassdoor",
   deep: true,
   desc: "Annunci + recensioni e stipendi aziendali.",
-  build: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${e(q.kwCore)}`
+  build: q => `https://www.glassdoor.it/Lavoro/index.htm?sc.keyword=${e(q.kwCore)}`
 }, {
   cat: "gen",
   name: "Subito Lavoro",
   deep: true,
   desc: "Annunci locali e informali.",
   build: q => `https://www.subito.it/annunci-italia/vendita/offerte-lavoro/?q=${e(q.kwCore)}`
-}, {
-  cat: "soc",
-  name: "Xing",
-  deep: true,
-  desc: "Rete professionale area DACH (DE/AT/CH).",
-  build: q => `https://www.xing.com/jobs/search?keywords=${e(q.kwCore)}&location=${e(q.loc)}`
 }, {
   cat: "soc",
   name: "Facebook — gruppi",
@@ -1137,77 +1127,17 @@ const PORTALS = [{
   desc: "Multinazionale, forte su profili office e specializzati.",
   build: () => `https://www.kellyservices.it/`
 }, {
-  cat: "tech",
-  name: "Wellfound",
-  deep: false,
-  desc: "Ex AngelList: startup e ruoli tech.",
-  build: () => `https://wellfound.com/jobs`
-}, {
-  cat: "tech",
-  name: "RemoteOK",
-  deep: true,
-  desc: "Lavoro 100% da remoto, tech-oriented.",
-  build: q => `https://remoteok.com/remote-${q.roleSlug || "dev"}-jobs`
-}, {
-  cat: "tech",
-  name: "We Work Remotely",
-  deep: true,
-  desc: "La bacheca remote più nota.",
-  build: q => `https://weworkremotely.com/remote-jobs/search?term=${e(q.kwCore)}`
-}, {
-  cat: "tech",
-  name: "Remotive",
-  deep: true,
-  desc: "Community e annunci remote.",
-  build: q => `https://remotive.com/remote-jobs?search=${e(q.kwCore)}`
-}, {
-  cat: "tech",
-  name: "Welcome to the Jungle",
-  deep: true,
-  desc: "Aziende con cultura + video (ex Otta).",
-  build: q => `https://www.welcometothejungle.com/it/jobs?query=${e(q.kwCore)}&aroundQuery=${e(q.loc)}`
-}, {
-  cat: "tech",
-  name: "Arc.dev",
-  deep: true,
-  desc: "Sviluppatori remote, anche freelance.",
-  build: q => `https://arc.dev/remote-jobs?search=${e(q.kwCore)}`
-}, {
-  cat: "tech",
-  name: "ATS aziendali",
-  deep: true,
-  desc: "Cerca sui career board Greenhouse & Lever.",
-  build: q => `https://www.google.com/search?q=${e(("(site:boards.greenhouse.io OR site:jobs.lever.co) " + q.kwCore + " " + q.loc).trim())}`
-}, {
-  cat: "free",
-  name: "Upwork",
-  deep: true,
-  desc: "Progetti freelance internazionali.",
-  build: q => `https://www.upwork.com/nx/search/jobs/?q=${e(q.kwCore)}`
-}, {
   cat: "free",
   name: "Malt",
   deep: true,
-  desc: "Freelance qualificati, forte in IT/FR.",
+  desc: "Freelance qualificati, attivo anche in Italia.",
   build: q => `https://www.malt.it/s?q=${e(q.kwCore)}`
 }, {
   cat: "free",
-  name: "Freelancer",
-  deep: true,
-  desc: "Marketplace globale di progetti.",
-  build: q => `https://www.freelancer.com/jobs/${q.roleSlug || "all"}/`
-}, {
-  cat: "free",
-  name: "Fiverr",
+  name: "AddLance",
   deep: false,
-  desc: "Vendi servizi a pacchetto (gig).",
-  build: () => `https://www.fiverr.com/`
-}, {
-  cat: "pub",
-  name: "EURES",
-  deep: true,
-  desc: "Portale UE per la mobilità professionale.",
-  build: q => `https://europa.eu/eures/portal/jv-se/search?lang=it&keywords=${e(q.kwCore)}`
+  desc: "Marketplace italiano di progetti per freelance.",
+  build: () => `https://www.addlance.com/`
 }, {
   cat: "pub",
   name: "InPA",
@@ -1395,37 +1325,6 @@ function Results({
     items: portals.filter(p => p.cat === cat.id)
   })), [portals]);
   const label = [criteria.role || "Qualsiasi ruolo", criteria.location].filter(Boolean).join(" · ");
-  const [live, setLive] = useState({
-    loading: true,
-    jobs: [],
-    error: false
-  });
-  useEffect(() => {
-    let alive = true;
-    const ctrl = new AbortController();
-    setLive({
-      loading: true,
-      jobs: [],
-      error: false
-    });
-    fetchLiveJobs(q, ctrl.signal).then(jobs => {
-      if (alive) setLive({
-        loading: false,
-        jobs,
-        error: false
-      });
-    }).catch(() => {
-      if (alive) setLive({
-        loading: false,
-        jobs: [],
-        error: true
-      });
-    });
-    return () => {
-      alive = false;
-      ctrl.abort();
-    };
-  }, [q.kwCore, q.loc]);
   const copyAll = useCallback(async () => {
     const lines = portals.map(p => p.name + ": " + p.build(q)).join("\n");
     try {
@@ -1439,7 +1338,7 @@ function Results({
     className: "rhead"
   }, React.createElement("div", {
     className: "l"
-  }, React.createElement("b", null, "Annunci e ricerche"), React.createElement("small", null, label)), React.createElement("div", {
+  }, React.createElement("b", null, "Ricerche pronte"), React.createElement("small", null, label)), React.createElement("div", {
     className: "ractions"
   }, React.createElement("button", {
     className: "btn btn-ghost",
@@ -1451,31 +1350,7 @@ function Results({
     onClick: () => onSave(criteria)
   }, React.createElement(Ic, {
     name: "bookmark"
-  }), " Salva ricerca"))), React.createElement("div", {
-    className: "live"
-  }, React.createElement("div", {
-    className: "chead"
-  }, React.createElement("span", {
-    className: "ci"
-  }, React.createElement(Ic, {
-    name: "sparkles"
-  })), React.createElement("h4", null, "Annunci trovati"), !live.loading && React.createElement("span", {
-    className: "cb"
-  }, live.jobs.length), React.createElement("span", {
-    className: "cl"
-  })), live.loading ? React.createElement("div", {
-    className: "jloading"
-  }, React.createElement(Ic, {
-    name: "loader",
-    className: "spin"
-  }), " Cerco annunci in tempo reale\u2026") : live.jobs.length === 0 ? React.createElement("div", {
-    className: "jempty"
-  }, "Nessun annuncio diretto per questa ricerca. Le fonti in tempo reale coprono soprattutto ruoli ", React.createElement("b", null, "da remoto e internazionali"), "; per i portali italiani usa le ricerche pronte qui sotto.") : React.createElement("div", {
-    className: "jgrid"
-  }, live.jobs.map((j, i) => React.createElement(JobCard, {
-    key: i,
-    j: j
-  })))), groups.map(({
+  }), " Salva ricerca"))), groups.map(({
     cat,
     items
   }) => {
@@ -1922,7 +1797,7 @@ function App() {
     className: "h2"
   }, "Descrivi cosa cerchi"), React.createElement("p", {
     className: "sub"
-  }, "Imposta ruolo, luogo e preferenze: JobRadar mostra annunci reali con link diretto all'offerta dalle fonti aperte, e prepara una ricerca mirata su ogni altro portale, social e agenzia."), React.createElement("div", {
+  }, "Imposta ruolo, luogo e preferenze: JobRadar prepara una ricerca mirata sull'Italia per ogni portale, social e agenzia, e la apre con i risultati reali di ciascun sito."), React.createElement("div", {
     className: "card hero"
   }, React.createElement("div", {
     className: "hero-radar"
@@ -1995,7 +1870,7 @@ function App() {
     className: "h2"
   }, "Descrivi il lavoro che vuoi"), React.createElement("p", {
     className: "sub"
-  }, "Scrivi in modo naturale cosa cerchi \u2014 ruolo, luogo, orario, settore. La descrizione viene interpretata sul tuo dispositivo e usata per trovare annunci diretti e preparare ricerche mirate su tutti i portali censiti."), React.createElement("div", {
+  }, "Scrivi in modo naturale cosa cerchi \u2014 ruolo, luogo, orario, settore. La descrizione viene interpretata sul tuo dispositivo e trasformata in ricerche mirate sull'Italia su tutti i portali censiti."), React.createElement("div", {
     className: "card"
   }, React.createElement("div", {
     className: "field"
