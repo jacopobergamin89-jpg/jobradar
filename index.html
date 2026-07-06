@@ -181,6 +181,27 @@ textarea.input{resize:vertical;min-height:150px;line-height:1.55}
 .jtype{font-size:10.5px;color:var(--muted);background:#EDF2F2;padding:3px 8px;border-radius:7px;text-transform:capitalize}
 .jdate{font-size:11px;color:var(--muted-2);margin-left:auto}
 
+/* Gestione portali */
+select.input{appearance:none;-webkit-appearance:none;-moz-appearance:none;padding-right:38px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6E71' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.55;margin:2px 0 14px}
+.hint b{color:var(--ink);font-family:'Space Mono',monospace}
+.cportal .pt{display:flex;align-items:center;justify-content:space-between;gap:8px;text-decoration:none;color:inherit}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px}
+.prow .ptag{margin-top:0}
+.premove{background:transparent;border:1px solid var(--line-2);color:var(--muted-2);width:28px;height:28px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 28px}
+.premove:hover{border-color:var(--danger);color:var(--danger)}
+.premove .ic{width:15px;height:15px}
+.hidden-sec{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
+.hidden-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.hchip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line-2);
+  color:var(--muted);padding:6px 8px 6px 13px;border-radius:20px;font-size:13px}
+.hchip button{background:transparent;border:0;color:var(--muted-2);cursor:pointer;display:flex;padding:3px;border-radius:6px}
+.hchip button:hover{color:var(--mint);background:var(--mint-soft)}
+.hchip .ic{width:14px;height:14px}
+
 /* Profile / analysis */
 .profile{border:1px solid var(--line);border-radius:18px;padding:22px 24px;background:var(--surface);margin-top:20px}
 .pfg{display:grid;grid-template-columns:1fr 1fr;gap:15px 28px;margin:6px 0 18px}
@@ -595,7 +616,8 @@ const ICONS = {
   wand: '<path d="m21.6 3.6-1.3-1.3a1.2 1.2 0 0 0-1.7 0L2.4 18.6a1.2 1.2 0 0 0 0 1.7l1.3 1.3a1.2 1.2 0 0 0 1.7 0L21.6 5.4a1.2 1.2 0 0 0 0-1.8Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
   loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
-  menu: '<line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>'
+  menu: '<line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>'
 };
 function Ic({
   name,
@@ -735,6 +757,28 @@ function analysisToCriteria(a) {
     remote: a.remote,
     schedule: a.schedule,
     keywords: ""
+  };
+}
+function extractDomain(input) {
+  let s = (input || "").trim();
+  if (!s) return "";
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try {
+    return new URL(s).hostname.replace(/^www\./, "");
+  } catch (_) {
+    return input.trim().replace(/^https?:\/\//i, "").replace(/^www\./, "").split("/")[0];
+  }
+}
+function customToPortal(c) {
+  const tpl = (c.template || "").includes("{q}") ? c.template : "";
+  return {
+    cat: c.cat || "gen",
+    name: c.name,
+    desc: c.desc || (tpl ? "Portale personalizzato con ricerca diretta." : "Ricerca sul sito tramite Google."),
+    deep: true,
+    custom: true,
+    id: c.id,
+    build: tpl ? q => tpl.replace(/{q}/g, e(q.kwCore)).replace(/{loc}/g, e(q.loc)) : q => `https://www.google.com/search?q=${e(("site:" + c.domain + " " + q.kwCore + " lavoro " + q.loc).trim())}`
   };
 }
 function fmtDate(s) {
@@ -925,6 +969,12 @@ const PORTALS = [{
   deep: true,
   desc: "Annunci locali e informali.",
   build: q => `https://www.subito.it/annunci-italia/vendita/offerte-lavoro/?q=${e(q.kwCore)}`
+}, {
+  cat: "gen",
+  name: "Edilportale",
+  deep: true,
+  desc: "Portale dell'edilizia: annunci cercati sul sito via Google.",
+  build: q => `https://www.google.com/search?q=${e(("site:edilportale.com lavoro " + q.kwCore + " " + q.loc).trim())}`
 }, {
   cat: "soc",
   name: "Xing",
@@ -1135,6 +1185,18 @@ const PORTALS = [{
   deep: false,
   desc: "Aggregatore bandi e concorsi.",
   build: () => `https://www.concorsipubblici.com/`
+}, {
+  cat: "pub",
+  name: "Concorsi Pubblici",
+  deep: true,
+  desc: "Concorsi e bandi della PA, filtrati per ruolo e zona.",
+  build: q => `https://www.google.com/search?q=${e(("concorso pubblico " + q.kwCore + " " + q.loc).trim())}`
+}, {
+  cat: "pub",
+  name: "Collegi Geometri (provinciali)",
+  deep: true,
+  desc: "Bacheche e avvisi dei Collegi dei Geometri, cercati per provincia.",
+  build: q => `https://www.google.com/search?q=${e(("collegio geometri " + q.loc + " offerte lavoro OR praticante OR bacheca " + q.kwCore).trim())}`
 }];
 function textIn(c) {
   return ((c.role || "") + " " + (c.keywords || "")).toLowerCase();
@@ -1289,13 +1351,14 @@ function JobCard({
 function Results({
   criteria,
   onSave,
-  onToast
+  onToast,
+  portals
 }) {
   const q = useMemo(() => buildQuery(criteria), [criteria]);
   const groups = useMemo(() => CATS.map(cat => ({
     cat,
-    items: PORTALS.filter(p => p.cat === cat.id)
-  })), []);
+    items: portals.filter(p => p.cat === cat.id)
+  })), [portals]);
   const label = [criteria.role || "Qualsiasi ruolo", criteria.location].filter(Boolean).join(" · ");
   const [live, setLive] = useState({
     loading: true,
@@ -1329,14 +1392,14 @@ function Results({
     };
   }, [q.kwCore, q.loc]);
   const copyAll = useCallback(async () => {
-    const lines = PORTALS.map(p => p.name + ": " + p.build(q)).join("\n");
+    const lines = portals.map(p => p.name + ": " + p.build(q)).join("\n");
     try {
       await navigator.clipboard.writeText(lines);
       onToast("Link copiati negli appunti");
     } catch (_) {
       onToast("Copia non riuscita — riprova");
     }
-  }, [q, onToast]);
+  }, [q, onToast, portals]);
   return React.createElement("div", null, React.createElement("div", {
     className: "rhead"
   }, React.createElement("div", {
@@ -1606,6 +1669,13 @@ function App() {
   const [cvErr, setCvErr] = useState("");
   const [saved, setSaved] = useState(() => loadJSON("jobradar:saved", []));
   const [toast, setToast] = useState("");
+  const [customPortals, setCustomPortals] = useState(() => loadJSON("jobradar:custom", []));
+  const [hidden, setHidden] = useState(() => loadJSON("jobradar:hidden", []));
+  const [pName, setPName] = useState("");
+  const [pUrl, setPUrl] = useState("");
+  const [pCat, setPCat] = useState("gen");
+  const [pTpl, setPTpl] = useState("");
+  const [pMsg, setPMsg] = useState("");
   useEffect(() => {
     store.set("jobradar:criteria", JSON.stringify(criteria));
   }, [criteria]);
@@ -1618,6 +1688,12 @@ function App() {
   useEffect(() => {
     store.set("jobradar:saved", JSON.stringify(saved));
   }, [saved]);
+  useEffect(() => {
+    store.set("jobradar:custom", JSON.stringify(customPortals));
+  }, [customPortals]);
+  useEffect(() => {
+    store.set("jobradar:hidden", JSON.stringify(hidden));
+  }, [hidden]);
   const showToast = useCallback(m => {
     setToast(m);
     clearTimeout(showToast._t);
@@ -1691,6 +1767,43 @@ function App() {
     setCvQuery(analysisToCriteria(a));
     scrollTo("r-cv");
   };
+  const activePortals = useMemo(() => [...PORTALS.filter(p => !hidden.includes(p.name)), ...customPortals.map(customToPortal)], [hidden, customPortals]);
+  const addPortal = () => {
+    const name = pName.trim();
+    if (!name) {
+      setPMsg("Dai un nome al portale.");
+      return;
+    }
+    const domain = extractDomain(pUrl);
+    const tpl = pTpl.trim();
+    if (!domain && !tpl.includes("{q}")) {
+      setPMsg("Inserisci l'indirizzo del sito, es. example.com.");
+      return;
+    }
+    setCustomPortals(list => [...list, {
+      id: "c" + Date.now(),
+      name,
+      domain,
+      cat: pCat,
+      template: tpl
+    }]);
+    setPName("");
+    setPUrl("");
+    setPTpl("");
+    setPCat("gen");
+    setPMsg("");
+    showToast("Portale aggiunto");
+  };
+  const removePortal = p => {
+    if (p.custom) {
+      setCustomPortals(list => list.filter(x => x.id !== p.id));
+      showToast("Portale rimosso");
+    } else {
+      setHidden(h => h.includes(p.name) ? h : [...h, p.name]);
+      showToast("Portale nascosto");
+    }
+  };
+  const restorePortal = name => setHidden(h => h.filter(n => n !== name));
   const NAV = [{
     id: "search",
     label: "Cerca offerte",
@@ -1711,7 +1824,7 @@ function App() {
     label: "Portali censiti",
     short: "Portali",
     icon: "globe",
-    count: PORTALS.length
+    count: activePortals.length
   }, {
     id: "saved",
     label: "Ricerche salvate",
@@ -1779,8 +1892,8 @@ function App() {
   }, React.createElement("div", {
     className: "hero-radar"
   }, React.createElement(Radar, {
-    count: PORTALS.length
-  }), React.createElement("p", null, PORTALS.length, " tra portali, social e agenzie pronti a essere interrogati.")), React.createElement("div", {
+    count: activePortals.length
+  }), React.createElement("p", null, activePortals.length, " tra portali, social e agenzie pronti a essere interrogati.")), React.createElement("div", {
     className: "hero-form"
   }, React.createElement("div", {
     className: "row2"
@@ -1839,7 +1952,8 @@ function App() {
   }, searchQuery && React.createElement(Results, {
     criteria: searchQuery,
     onSave: saveSearch,
-    onToast: showToast
+    onToast: showToast,
+    portals: activePortals
   }))), tab === "describe" && React.createElement(React.Fragment, null, React.createElement("div", {
     className: "eyebrow"
   }, "Ricerca a parole tue"), React.createElement("h2", {
@@ -1894,7 +2008,8 @@ function App() {
   }, React.createElement(Results, {
     criteria: descQuery,
     onSave: saveSearch,
-    onToast: showToast
+    onToast: showToast,
+    portals: activePortals
   })))), tab === "cv" && React.createElement(React.Fragment, null, React.createElement("div", {
     className: "eyebrow"
   }, "Ricerca dal curriculum"), React.createElement("h2", {
@@ -1944,15 +2059,76 @@ function App() {
   }, React.createElement(Results, {
     criteria: cvQuery,
     onSave: saveSearch,
-    onToast: showToast
+    onToast: showToast,
+    portals: activePortals
   })))), tab === "portals" && React.createElement(React.Fragment, null, React.createElement("div", {
     className: "eyebrow"
   }, "Fonti monitorate"), React.createElement("h2", {
     className: "h2"
   }, "Portali censiti"), React.createElement("p", {
     className: "sub"
-  }, "Le ", PORTALS.length, " piattaforme che JobRadar interroga, divise per tipo. Le fonti con ", React.createElement("b", null, "ricerca pre-compilata"), " ricevono gi\xE0 le tue parole chiave; le altre si aprono sul portale, dove completi tu."), CATS.map(cat => {
-    const items = PORTALS.filter(p => p.cat === cat.id);
+  }, "Le ", activePortals.length, " piattaforme che JobRadar interroga. Puoi aggiungerne di tue o togliere quelle che non ti servono con la \xD7 su ogni scheda."), React.createElement("div", {
+    className: "card"
+  }, React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      marginBottom: 12
+    }
+  }, React.createElement(Ic, {
+    name: "plus",
+    size: 13,
+    style: {
+      verticalAlign: "-2px",
+      marginRight: 6
+    }
+  }), "Aggiungi un portale"), React.createElement("div", {
+    className: "row2"
+  }, React.createElement("div", {
+    className: "field"
+  }, React.createElement("label", null, "Nome del sito"), React.createElement("input", {
+    className: "input",
+    placeholder: "es. Lavoro Subito",
+    value: pName,
+    onChange: ev => setPName(ev.target.value)
+  })), React.createElement("div", {
+    className: "field"
+  }, React.createElement("label", null, "Indirizzo del sito"), React.createElement("input", {
+    className: "input",
+    placeholder: "es. example.com",
+    value: pUrl,
+    onChange: ev => setPUrl(ev.target.value)
+  }))), React.createElement("div", {
+    className: "row2"
+  }, React.createElement("div", {
+    className: "field"
+  }, React.createElement("label", null, "Categoria"), React.createElement("select", {
+    className: "input select",
+    value: pCat,
+    onChange: ev => setPCat(ev.target.value)
+  }, CATS.map(c => React.createElement("option", {
+    key: c.id,
+    value: c.id
+  }, c.name)))), React.createElement("div", {
+    className: "field"
+  }, React.createElement("label", null, "Indirizzo di ricerca (facoltativo)"), React.createElement("input", {
+    className: "input",
+    placeholder: "https://example.com/jobs?q={q}",
+    value: pTpl,
+    onChange: ev => setPTpl(ev.target.value)
+  }))), React.createElement("p", {
+    className: "hint"
+  }, "Se lasci vuoto l'indirizzo di ricerca, le offerte su quel sito vengono cercate tramite Google (funziona con qualsiasi sito). Se invece conosci l'indirizzo dei risultati, incollalo mettendo ", React.createElement("b", null, "{q}"), " dove vanno le parole chiave."), React.createElement("button", {
+    className: "btn btn-amber",
+    onClick: addPortal
+  }, React.createElement(Ic, {
+    name: "plus"
+  }), " Aggiungi portale"), pMsg && React.createElement("div", {
+    className: "err"
+  }, React.createElement(Ic, {
+    name: "x"
+  }), React.createElement("span", null, pMsg))), CATS.map(cat => {
+    const items = activePortals.filter(p => p.cat === cat.id);
+    if (items.length === 0) return null;
     return React.createElement("div", {
       className: "cgroup",
       key: cat.id
@@ -1968,20 +2144,53 @@ function App() {
       className: "cl"
     })), React.createElement("div", {
       className: "pgrid"
-    }, items.map(p => React.createElement("a", {
-      className: "portal",
-      key: p.name,
+    }, items.map(p => React.createElement("div", {
+      className: "portal cportal",
+      key: p.id || p.name
+    }, React.createElement("a", {
+      className: "pt",
       href: p.build(buildQuery(EMPTY)),
       target: "_blank",
       rel: "noopener noreferrer"
-    }, React.createElement("div", {
-      className: "pt"
     }, React.createElement("b", null, p.name), React.createElement(Ic, {
       name: "ext"
-    })), React.createElement("p", null, p.desc), React.createElement("span", {
-      className: "ptag " + (p.deep ? "deep" : "site")
-    }, p.deep ? "ricerca pre-compilata" : "apre il portale")))));
-  })), tab === "saved" && React.createElement(React.Fragment, null, React.createElement("div", {
+    })), React.createElement("p", null, p.desc), React.createElement("div", {
+      className: "prow"
+    }, React.createElement("span", {
+      className: "ptag " + (p.deep || p.custom ? "deep" : "site")
+    }, p.custom ? "personalizzato" : p.deep ? "ricerca pre-compilata" : "apre il portale"), React.createElement("button", {
+      className: "premove",
+      onClick: () => removePortal(p),
+      "aria-label": p.custom ? "Rimuovi" : "Nascondi"
+    }, React.createElement(Ic, {
+      name: "x"
+    })))))));
+  }), hidden.length > 0 && React.createElement("div", {
+    className: "hidden-sec"
+  }, React.createElement("div", {
+    className: "chead"
+  }, React.createElement("h4", null, "Portali nascosti"), React.createElement("span", {
+    className: "cb"
+  }, hidden.length), React.createElement("span", {
+    className: "cl"
+  }), React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      padding: "7px 14px",
+      minHeight: 0
+    },
+    onClick: () => setHidden([])
+  }, "Ripristina tutti")), React.createElement("div", {
+    className: "hidden-chips"
+  }, hidden.map(name => React.createElement("span", {
+    className: "hchip",
+    key: name
+  }, name, React.createElement("button", {
+    onClick: () => restorePortal(name),
+    "aria-label": "Ripristina"
+  }, React.createElement(Ic, {
+    name: "plus"
+  }))))))), tab === "saved" && React.createElement(React.Fragment, null, React.createElement("div", {
     className: "eyebrow"
   }, "Le tue ricerche"), React.createElement("h2", {
     className: "h2"
