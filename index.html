@@ -230,11 +230,11 @@ textarea.input{resize:vertical;min-height:150px;line-height:1.55}
 @media (max-width:900px){
   .side{display:none}
   .mobtop{display:block;position:sticky;top:0;z-index:20;background:var(--petrol);color:#fff}
-  .mobbrand{display:flex;align-items:center;gap:11px;padding:14px 18px}
+  .mobbrand{display:flex;align-items:center;gap:11px;padding:14px 18px 10px}
   .mobbrand h1{font-size:18px;margin:0;font-weight:600}
   .mobbrand .mark{width:29px;height:29px;flex:0 0 29px}
   .mobbrand .tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint)}
-  .wrap{padding:22px 18px calc(96px + env(safe-area-inset-bottom))}
+  .wrap{padding:22px 18px calc(60px + env(safe-area-inset-bottom))}
   .h2{font-size:24px}
   .sub{font-size:15px;margin-bottom:22px}
   .hero{grid-template-columns:1fr}
@@ -244,14 +244,13 @@ textarea.input{resize:vertical;min-height:150px;line-height:1.55}
   .rhead .ractions{width:100%}
   .rhead .ractions .btn{flex:1}
 
-  .botnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
-    padding:8px 6px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;box-shadow:0 -6px 20px -14px rgba(14,46,51,.4)}
-  .bn{flex:1;background:transparent;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted-2);
-    font-size:10.5px;font-family:inherit;cursor:pointer;padding:4px 2px;border-radius:10px;position:relative}
-  .bn .ic{width:22px;height:22px}
-  .bn.on{color:var(--petrol)}
-  .bn.on .ic{color:var(--mint)}
-  .bn .dot{position:absolute;top:2px;right:calc(50% - 16px);width:7px;height:7px;background:var(--amber);border-radius:50%}
+  .mobtabs{display:flex;gap:7px;padding:0 14px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .mobtabs::-webkit-scrollbar{display:none}
+  .mt{white-space:nowrap;flex:0 0 auto;background:rgba(255,255,255,.08);border:0;color:#BFD6D3;padding:9px 14px;border-radius:20px;
+    font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .mt .ic{width:15px;height:15px}
+  .mt.on{background:var(--mint);color:var(--petrol-3);font-weight:600}
+  .mt.on .ic{color:var(--petrol-3)}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep{animation:none;opacity:.28}.blip{animation:none;opacity:.9}.portal:hover{transform:none}
@@ -644,9 +643,14 @@ const SEN_WORD = {
   senior: "senior",
   lead: "lead"
 };
+const SCH_WORD = {
+  fulltime: "full time",
+  parttime: "part time"
+};
 function buildQuery(c) {
   const senWord = SEN_WORD[c.seniority] || "";
-  const core = [c.role, senWord, c.keywords].filter(Boolean).join(" ").trim();
+  const schWord = SCH_WORD[c.schedule] || "";
+  const core = [c.role, senWord, schWord, c.keywords].filter(Boolean).join(" ").trim();
   const it = [core, c.remote === "remoto" ? "remoto" : ""].filter(Boolean).join(" ").trim();
   const slugSrc = [c.role, c.keywords].filter(Boolean).join(" ").split(/\s+/).slice(0, 3).join(" ");
   return {
@@ -666,6 +670,8 @@ function analyzeText(text) {
   if (/\b(da )?remoto\b|smart[\s-]?working|full[\s-]?remote|telelavoro/.test(flat)) remote = "remoto";else if (/\bibrido\b|hybrid/.test(flat)) remote = "ibrido";else if (/\bin sede\b|in presenza|on[\s-]?site|presso la sede/.test(flat)) remote = "onsite";
   let contract = "qualsiasi";
   if (/indetermin|posto fisso|assunzione stabile|contratto stabile|tempo indeterminato|a tempo indet/.test(flat)) contract = "indeterminato";else if (/tempo determinato|a termine|determinato/.test(flat)) contract = "determinato";else if (/\bstage\b|tirocin/.test(flat)) contract = "stage";else if (/apprendist/.test(flat)) contract = "apprendistato";else if (/partita iva|\bp\.? ?iva\b|freelance|libero profession/.test(flat)) contract = "piva";
+  let schedule = "qualsiasi";
+  if (/part[\s-]?time|tempo parziale|mezza giornata/.test(flat)) schedule = "parttime";else if (/full[\s-]?time|tempo pieno/.test(flat)) schedule = "fulltime";
   let seniority = "qualsiasi";
   if (/\blead\b|responsabile|coordinat|dirigent|\bcapo\b|team lead|manager/.test(flat)) seniority = "lead";else if (/\bsenior\b|esperto|pluriennale|molta esperienza|molti anni/.test(flat)) seniority = "senior";else if (/\bjunior\b|neolaureat|prima esperienza|entry[\s-]?level|principiante|senza esperienza|apprendist/.test(flat)) seniority = "junior";
   const ym = flat.match(/(\d+)\s*ann/);
@@ -683,7 +689,7 @@ function analyzeText(text) {
   }
   if (!location && /\bitalia\b/.test(flat)) location = "Italia";
   if (!location && /\bester[oa]\b/.test(flat)) location = "";
-  const removeRe = /(\bda remoto\b|\bremoto\b|smart[\s-]?working|telelavoro|\bibrido\b|hybrid|in sede|in presenza|on[\s-]?site|a tempo (in)?determinato|tempo (in)?determinato|(in)?determinato|posto fisso|stabile|\bstage\b|tirocinio|apprendistato|apprendista|partita iva|p\.? ?iva|freelance|libero profession|\bjunior\b|\bsenior\b|\blead\b|responsabile|manager|neolaureato|neolaureata|esperto|pluriennale|entry[\s-]?level|\b\d+\s*anni?\b)/gi;
+  const removeRe = /(\bda remoto\b|\bremoto\b|smart[\s-]?working|telelavoro|\bibrido\b|hybrid|in sede|in presenza|on[\s-]?site|a tempo (in)?determinato|tempo (in)?determinato|(in)?determinato|posto fisso|stabile|\bstage\b|tirocinio|apprendistato|apprendista|partita iva|p\.? ?iva|freelance|libero profession|\bjunior\b|\bsenior\b|\blead\b|responsabile|manager|neolaureato|neolaureata|esperto|pluriennale|entry[\s-]?level|part[\s-]?time|full[\s-]?time|tempo parziale|tempo pieno|\b\d+\s*anni?\b)/gi;
   let clean = raw.replace(removeRe, " ");
   if (location && location !== "Italia") clean = clean.replace(new RegExp(location, "gi"), " ");
   clean = clean.replace(/\bitalia\b/gi, " ");
@@ -709,6 +715,7 @@ function analyzeText(text) {
     seniority,
     contract,
     remote,
+    schedule,
     keywords,
     queries
   };
@@ -720,6 +727,7 @@ function analysisToCriteria(a) {
     seniority: a.seniority,
     contract: a.contract,
     remote: a.remote,
+    schedule: a.schedule,
     keywords: ""
   };
 }
@@ -1459,7 +1467,22 @@ function AnalysisCard({
     style: {
       textTransform: "capitalize"
     }
-  }, data.remote === "qualsiasi" ? "indifferente" : data.remote))), data.keywords && data.keywords.length > 0 && React.createElement("div", {
+  }, data.remote === "qualsiasi" ? "indifferente" : data.remote)), React.createElement("div", {
+    className: "pfi"
+  }, React.createElement("div", {
+    className: "k"
+  }, "Orario"), React.createElement("div", {
+    className: "v"
+  }, data.schedule === "fulltime" ? "Full-time" : data.schedule === "parttime" ? "Part-time" : "Indifferente")), React.createElement("div", {
+    className: "pfi"
+  }, React.createElement("div", {
+    className: "k"
+  }, "Contratto"), React.createElement("div", {
+    className: "v",
+    style: {
+      textTransform: "capitalize"
+    }
+  }, data.contract && data.contract !== "qualsiasi" ? data.contract : "Qualsiasi"))), data.keywords && data.keywords.length > 0 && React.createElement("div", {
     className: "field"
   }, React.createElement("label", null, "Parole chiave rilevate"), React.createElement("div", {
     className: "skills"
@@ -1531,12 +1554,23 @@ const REM_OPTS = [{
   v: "onsite",
   label: "In sede"
 }];
+const SCH_OPTS = [{
+  v: "qualsiasi",
+  label: "Qualsiasi"
+}, {
+  v: "fulltime",
+  label: "Full-time"
+}, {
+  v: "parttime",
+  label: "Part-time"
+}];
 const EMPTY = {
   role: "",
   location: "",
   seniority: "qualsiasi",
   contract: "qualsiasi",
   remote: "qualsiasi",
+  schedule: "qualsiasi",
   keywords: ""
 };
 const DESC_EX = ["Sviluppatore React da remoto, tempo indeterminato", "Marketing digitale junior a Milano, anche stage", "Project manager edilizia, zona Roma", "Impiegato amministrativo part-time vicino a Torino"];
@@ -1705,7 +1739,16 @@ function App() {
     className: "mobbrand"
   }, React.createElement(BrandMark, null), React.createElement("div", null, React.createElement("h1", null, "JobRadar"), React.createElement("span", {
     className: "tag"
-  }, "copertura offerte")))), React.createElement("main", {
+  }, "copertura offerte"))), React.createElement("div", {
+    className: "mobtabs"
+  }, NAV.map(n => React.createElement("button", {
+    key: n.id,
+    className: "mt" + (tab === n.id ? " on" : ""),
+    onClick: () => setTab(n.id)
+  }, React.createElement(Ic, {
+    name: n.icon,
+    className: "ic"
+  }), n.short)))), React.createElement("main", {
     className: "main"
   }, React.createElement("div", {
     className: "wrap"
@@ -1764,6 +1807,12 @@ function App() {
     options: CON_OPTS,
     value: criteria.contract,
     onChange: v => set("contract", v)
+  })), React.createElement("div", {
+    className: "field"
+  }, React.createElement("label", null, "Orario"), React.createElement(ChipRow, {
+    options: SCH_OPTS,
+    value: criteria.schedule,
+    onChange: v => set("schedule", v)
   })), React.createElement("button", {
     className: "btn btn-amber btn-full",
     onClick: runSearch
@@ -1946,18 +1995,7 @@ function App() {
     onClick: () => setSaved(s => s.filter(x => x.id !== item.id))
   }, React.createElement(Ic, {
     name: "trash"
-  }))))))), React.createElement("nav", {
-    className: "botnav"
-  }, NAV.map(n => React.createElement("button", {
-    key: n.id,
-    className: "bn" + (tab === n.id ? " on" : ""),
-    onClick: () => setTab(n.id)
-  }, n.id === "saved" && saved.length > 0 && React.createElement("span", {
-    className: "dot"
-  }), React.createElement(Ic, {
-    name: n.icon,
-    className: "ic"
-  }), n.short))), toast && React.createElement("div", {
+  }))))))), toast && React.createElement("div", {
     className: "toast"
   }, React.createElement(Ic, {
     name: "check"
